@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-api-gateway-appset
+  namespace: argocd
+  
+  annotations:
+  # Wave -1: Create Namespace
+  # Wave 0: Install Controllers & CRDs (cert-manager, external-secrets)
+  # Wave 1: Apply dependent resources (ClusterIssuer, ClusterSecretStore)
+  # Wave 2: Deploy Applications that consume those secrets and certificates
+    argocd.argoproj.io/sync-wave: "-2"  # Must run BEFORE the AWS Load Balancer Controller (-1)
+spec:
+  {{/*
+  generators:
+  Tells the Argo CD ApplicationSet controller to look for rules to generate parameters.
+  - list:
+  Specifies the generator type.
+  elements:
+  The mandatory array field containing key-value maps.
+  - env:
+  Defines the parameter key name.
+  */}}
+  generators:
+    - list:
+        elements:
+          - env: {{ .Values.environment | quote }}
+  template:
+    metadata:
+      name: '{{ .Values.environment }}-platform-api-gateway'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/kubernetes-sigs/gateway-api.git'
+        targetRevision: v1.1.0
+        path: config/crd/standard
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - SkipDryRunOnMissingResource=true

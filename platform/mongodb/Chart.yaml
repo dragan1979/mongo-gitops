@@ -1,0 +1,9 @@
+apiVersion: v2
+name: mongodb-wrapper
+description: Wrapper chart for Bitnami MongoDB and External Secrets
+type: application
+version: 1.0.0
+dependencies:
+  - name: mongodb
+    version: 19.1.21
+    repository: https://charts.bitnami.com/bitnami

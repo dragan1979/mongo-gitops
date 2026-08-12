@@ -1,0 +1,9 @@
+clusterName: "dev-mongodb-eks-cluster"
+
+# Attach the IRSA IAM Role created earlier in Terraform
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller
+  annotations:
+    # Replace with actual AWS Account ID and role name from Terraform
+    eks.amazonaws.com/role-arn: "arn:aws:iam::043272859093:role/dev-aws-load-balancer-controller"

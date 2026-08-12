@@ -1,0 +1,22 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana-public-route
+  namespace: monitoring # Deploys directly alongside the service
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+ 
+  parentRefs:
+    - name: main-gateway
+      namespace: default # References existing public gateway
+  hostnames:
+    - "{{ .Values.domainName }}"   # ◄── Dynamic per environment
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ .Values.environment }}-platform-prometheus-stack-grafana
+          port: 80

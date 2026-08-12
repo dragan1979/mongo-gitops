@@ -1,0 +1,2 @@
+environment: "staging"
+domainName: "argo-staging.aks.com" 

@@ -1,0 +1,2 @@
+environment: "dev"
+esoRoleArn: "arn:aws:iam::043272859093:role/dev-external-secrets-irsa"

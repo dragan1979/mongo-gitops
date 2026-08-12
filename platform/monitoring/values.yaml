@@ -1,0 +1,44 @@
+domainName: dev-grafana.aks.com
+
+nodeExporter:
+   enabled: true
+
+# ENABLE Kubelet for container metrics
+kubelet:
+  enabled: true
+  
+#grafana:
+#  service:
+#    type: NodePort
+
+# DISABLE EKS-Managed Control Plane scraping (these don't exist on user nodes)
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+# Standard memory/CPU requests to keep Prometheus stable
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    # Strorage spec
+    storageSpec:
+          volumeClaimTemplate:
+            spec:
+              # Use gp3 (provisioned dynamically by the AWS EBS CSI Driver)
+              storageClassName: gp3
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi

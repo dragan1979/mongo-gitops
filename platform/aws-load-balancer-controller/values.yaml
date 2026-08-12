@@ -1,0 +1,22 @@
+defaultLoadBalancerScheme: internet-facing
+
+
+# Default (enableCertManager: false):Tells the AWS Load Balancer Controller Helm chart to hand over TLS certificate management for its webhooks to cert-manager instead of generating its own self-signed certificates.
+
+# The controller uses internal code to self-generate a temporary CA and TLS keypair on pod startup, then tries to update the MutatingWebhookConfiguration. If the pod restarts or the internal secret gets out of sync with the Kubernetes API server, it breaks—causing the exact x509: certificate signed by unknown authority error you just hit.
+
+# With cert-manager (enableCertManager: true): The Helm chart creates Kubernetes Certificate and Issuer resources instead. The cluster's cert-manager operator takes full responsibility for provisioning, renewing, and automatically injecting valid CA bundles into the webhooks before certificates expire.
+
+enableCertManager: true
+
+# When the AWS Load Balancer Controller provisions an Application Load Balancer (ALB), it needs to know how to route traffic from the ALB into cluster. AWS supports two primary target modes:Featureip Mode (Recommended)
+# and instance Mode.
+# In ip mode, the ALB registers the actual Pod IP address directly in the AWS Target Group.
+# In instance mode, the ALB routes traffic to the EC2 Worker Nodes on a high-numbered port (NodePort), and internal Kubernetes routing finishes the delivery. Instance mode requires the backend Kubernetes Service to be set to type: NodePort. If service is set to ClusterIP, there is no NodePort for the ALB to target, causing the TargetGroup port is empty error.
+
+
+# configure the AWS Load Balancer Controller to use ip mode by default.
+defaultTargetType: ip
+
+
+enableGatewayAPI: true

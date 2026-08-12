@@ -1,0 +1,40 @@
+# Because platform-cert-manager.yaml pulls the chart directly from Jetstack   #([https://charts.jetstack.io](https://charts.jetstack.io)), Argo CD won't read a values.yaml file from Git repository #unless you either use multi-source or define it in line.
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-cert-manager-appset
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  generators:
+    - list:
+        elements:
+          - env: {{ .Values.environment | quote }}
+  template:
+    metadata:
+      name: '{{ .Values.environment }}-platform-cert-manager'
+      namespace: argocd
+    spec:
+      project: default
+      sources:
+        - repoURL: 'https://charts.jetstack.io'
+          chart: cert-manager
+          targetRevision: 1.21.1
+          helm:
+            valueFiles:
+              - $values/platform/cert-manager/values.yaml
+        - repoURL: 'https://github.com/dragan-actions-course/mongo-app-gitops-repo.git'
+          targetRevision: HEAD
+          ref: values
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: cert-manager
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

@@ -1,0 +1,2 @@
+environment: "prod"
+domainName: "argo-prod.aks.com" 

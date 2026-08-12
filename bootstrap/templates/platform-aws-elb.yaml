@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-aws-elb-appset
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  generators:
+    - list:
+        elements:
+          - env: {{ .Values.environment | quote }}
+  template:
+    metadata:
+      name: '{{ .Values.environment }}-platform-aws-elb'
+      namespace: argocd
+    spec:
+      project: default
+      sources:
+        - repoURL: 'https://aws.github.io/eks-charts'
+          chart: aws-load-balancer-controller
+          targetRevision: 3.4.3
+          helm:
+            valueFiles:
+              - $values/platform/aws-load-balancer-controller/values.yaml
+              - '$values/platform/aws-load-balancer-controller/values-{{ .Values.environment }}.yaml'
+        - repoURL: 'https://github.com/dragan-actions-course/mongo-app-gitops-repo.git'
+          targetRevision: HEAD
+          ref: values
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: kube-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          # SkipDryRunOnMissingResource=true tells Argo CD: "Don't panic if you don't recognize a resource type yet—skip the # pre-check and apply it anyway."
+          - SkipDryRunOnMissingResource=true

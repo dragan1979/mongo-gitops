@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-gateway-appset
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  generators:
+    - list:
+        elements:
+          - env: {{ .Values.environment | quote }}
+  template:
+    metadata:
+      name: '{{ .Values.environment }}-platform-gateway'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/dragan-actions-course/mongo-app-gitops-repo.git'
+        targetRevision: HEAD
+        path: platform/gateways
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

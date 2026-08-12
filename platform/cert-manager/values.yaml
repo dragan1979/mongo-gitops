@@ -1,0 +1,5 @@
+#Tools like cert-manager introduce brand-new custom concepts that Kubernetes has never heard of, such as Certificate and #Issuer. These custom concepts are called CRDs (Custom Resource Definitions).
+# If you try to create a Certificate without setting installCRDs: true, Kubernetes panics and says:
+# "I don't know what a 'Certificate' is! That word isn't in my dictionary." (This is the exact error you saw).
+# When you set installCRDs: true, the Helm chart installs those new "dictionary definitions" into Kubernetes first. Now #Kubernetes understands what a Certificate is.
+installCRDs: true

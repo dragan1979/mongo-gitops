@@ -1,0 +1,7 @@
+# Generic placeholders to satisfy Helm template rendering
+environment: "default"
+domainName: "placeholder.local"
+
+# You would also put configurations here that are IDENTICAL across all environments
+# to avoid duplicating them in dev, staging, and prod.
+# replicaCount: 1

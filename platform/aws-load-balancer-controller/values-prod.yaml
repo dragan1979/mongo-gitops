@@ -1,0 +1,4 @@
+clusterName: "prod-mongodb-eks-cluster"
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::043272859093:role/prod-aws-load-balancer-controller"

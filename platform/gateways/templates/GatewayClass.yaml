@@ -1,0 +1,9 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: aws-alb
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Created FIRST
+spec:
+  controllerName: gateway.k8s.aws/alb

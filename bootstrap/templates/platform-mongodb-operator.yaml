@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-mongodb-appset
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  generators:
+    - list:
+        elements:
+          - env: {{ .Values.environment | quote }}
+  template:
+    metadata:
+      name: '{{ .Values.environment }}-platform-mongodb'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/dragan-actions-course/mongo-app-gitops-repo.git'
+        targetRevision: HEAD
+        path: platform/mongodb
+        helm:
+          valueFiles:
+            - values.yaml
+            - values-{{ .Values.environment }}.yaml
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: mongodb-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

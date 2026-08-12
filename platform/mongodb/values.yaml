@@ -1,0 +1,28 @@
+auth:
+  enabled: true
+  existingSecret: mongo-credentials  # References the K8s Secret created by ESO
+  
+  # --- SPECIFY USERNAMES & DATABASES HERE ---
+  usernames:
+    - appuser        # <--- Your custom application username
+  databases:
+    - appdb          # <--- Your custom application database name
+# [ Argo CD ] ──> Creates PVC ──> [ EBS CSI Driver ] ──> Calls AWS API (Create Volume)
+# [ MongoDB Pod ] <── Mounts Drive <── Attaches to EC2 Node <── [AWS EBS Volume (gp3) ]
+# The MongoDB StatefulSet creates a PVC (Persistent Volume Claim), which is simply a ticket saying: "I need 10Gi of gp3 storage." 
+# The AWS EBS CSI Driver (a controller plugin running inside your EKS cluster) watches for new PVC requests. It reads the storageClass: gp3 instruction from configuration.
+# The CSI Driver sends an automated API request to AWS:
+# ec2:CreateVolume -> Size: 10Gi, Type: gp3, AvailabilityZone: eu-central-1a
+# AWS attaches the newly created EBS volume to the virtual hardware of the underlying EC2 worker node hosting MongoDB pod. To the EC2 instance, it looks like plugging in a brand-new raw SSD (e.g., /dev/nvme1n1).
+# The Kubernetes agent (kubelet) on that EC2 node:
+# Formats the raw EBS volume with a filesystem (usually ext4 or xfs).
+# Mounts the drive path directly inside the MongoDB container at its data directory: /bitnami/mongodb/data
+# Standard EBS volumes (ReadWriteOnce) are bound to a single Availability Zone. If Pod 1 running in eu-central-1a fails, Kubernetes will re-attach its EBS volume to a new EC2 node inside eu-central-1a.
+mongodb:
+  persistence:
+    enabled: true
+    storageClass: "gp3"    # AWS EBS CSI driver for storage class (Storage class must already exist in EKS)
+    size: 2Gi             # Set disk size required for your app
+    accessModes:
+      - ReadWriteOnce
+    

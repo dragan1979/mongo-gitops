@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-prometheus-stack-appset
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  generators:
+    - list:
+        elements:
+          - env: {{ .Values.environment | quote }}
+  template:
+    metadata:
+      name: '{{ .Values.environment }}-platform-prometheus-stack'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/dragan-actions-course/mongo-app-gitops-repo.git'
+        path: platform/monitoring
+        helm:
+          valueFiles:
+            - values.yaml
+            - values-{{ .Values.environment }}.yaml
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: monitoring
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

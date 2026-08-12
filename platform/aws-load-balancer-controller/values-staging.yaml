@@ -1,0 +1,4 @@
+clusterName: "staging-mongodb-eks-cluster"
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::043272859093:role/staging-aws-load-balancer-controller"

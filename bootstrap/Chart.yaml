@@ -1,0 +1,30 @@
+# When Argo CD pulls Git repository, it looks for clues to figure out how to render the files.
+# If Argo CD sees a directory with just YAML files, it applies them as raw, static Kubernetes manifests. But if Argo CD sees a Chart.yaml file, it immediately switches into Helm mode.
+# Adding Chart.yaml tells Argo CD: "Treat this directory as a Helm chart. Read the values-${var.environment}.yaml file I pass you, and use it to replace any {{ .Values.environment }} variables you find inside."
+# Without Chart.yaml, Argo CD would crash trying to read {{ .Values.environment }} because it wouldn't know it was supposed to process it as a Helm variable.
+
+# ==============================================================================
+# GITOPS PLATFORM ARCHITECTURE PATTERN (LOCAL HELM WRAPPER CHART)
+# ==============================================================================
+# Rule: Every component under platform/ follows this exact standard layout:
+#
+#   platform/<component>/
+#   ├── Chart.yaml          <-- Upstream vendor dependency definition
+#   ├── values.yaml         <-- Overrides for sub-chart & custom values
+#   └── templates/          <-- Raw K8s manifests (HTTPRoutes, Secrets, IRSA)
+#
+# Standard Mental Model Mapping:
+# ┌─────────────────────┬───────────────────────────┬──────────────────────────────────┐
+# │ Directory           │ Chart.yaml Dependency     │ subfolder templates/ Content     │
+# ├─────────────────────┼───────────────────────────┼──────────────────────────────────┤
+# │ platform/mongodb/   │ bitnami/mongodb           │ service-account.yaml,            │
+# │                     │                           │ secret-store.yaml,               │
+# │                     │                           │ external-secret.yaml             │
+# │ platform/argocd/    │ argo-cd                   │ argocd-routes.yaml               │
+# │ platform/monitoring/│ kube-prometheus-stack     │ grafana-routes.yaml              │
+# └─────────────────────┴───────────────────────────┴──────────────────────────────────┘
+# ==============================================================================
+
+apiVersion: v2
+name: root-bootstrap
+version: 1.0.0

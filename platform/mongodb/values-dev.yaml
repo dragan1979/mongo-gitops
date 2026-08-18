@@ -5,5 +5,5 @@ esoRoleArn: "arn:aws:iam::043272859093:role/dev-external-secrets-irsa"
 mongodb:
   metrics:
     serviceMonitor:
-      additionalLabels:
+      labels:
         release: "dev-platform-prometheus-stack"

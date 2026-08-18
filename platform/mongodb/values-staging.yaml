@@ -1,2 +1,8 @@
 environment: "staging"
 esoRoleArn: "arn:aws:iam::043272859093:role/staging-external-secrets-irsa"
+
+mongodb:
+  metrics:
+    serviceMonitor:
+      additionalLabels:
+        release: "staging-platform-prometheus-stack"

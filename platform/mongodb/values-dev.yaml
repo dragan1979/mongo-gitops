@@ -6,4 +6,4 @@ mongodb:
   metrics:
     serviceMonitor:
       additionalLabels:
-        release: "staging-platform-prometheus-stack"
+        release: "dev-platform-prometheus-stack"

@@ -17,7 +17,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: 'https://github.com/dragan-actions-course/mongo-app-gitops-repo.git'
+        repoURL: 'https://github.com/dragan-actions-course/mongo-gitops.git'
         targetRevision: HEAD
         path: platform/gateways
       destination:

@@ -25,7 +25,7 @@ spec:
           helm:
             valueFiles:
               - $values/platform/cert-manager/values.yaml
-        - repoURL: 'https://github.com/dragan-actions-course/mongo-app-gitops-repo.git'
+        - repoURL: 'https://github.com/dragan-actions-course/mongo-gitops.git'
           targetRevision: HEAD
           ref: values
       destination:

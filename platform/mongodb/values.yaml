@@ -25,4 +25,17 @@ mongodb:
     size: 2Gi             # Set disk size required for your app
     accessModes:
       - ReadWriteOnce
-    
+
+# Configure the metrics user and enable the metrics sidecar under mongodb
+
+
+# --- DEDICATED METRICS USER & SIDECAR ---
+  metrics:
+    username: "mongodb-metrics"  # The chart creates this user with clusterMonitor privileges
+    # The underlying Bitnami MongoDB subchart generates the ServiceMonitor resource automatically
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      namespace: mongodb-system

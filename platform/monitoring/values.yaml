@@ -24,6 +24,15 @@ kubeProxy:
 # Standard memory/CPU requests to keep Prometheus stable
 prometheus:
   prometheusSpec:
+    # --- ALLOW DISCOVERY ACROSS ALL NAMESPACES & LABELS ---
+    # Disables the default Helm chart behavior that automatically injects a release: helm-release-name label requirement into Prometheus's label selector when serviceMonitorSelector is empty.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    # # Sets the target label filter to match all labels (empty selector), allowing Prometheus to scrape any ServiceMonitor regardless of what labels are attached to it.
+    serviceMonitorSelector:
+      matchLabels: {}
+    # Removes namespace restrictions (empty namespace selector), instructing the Prometheus Operator to watch for and discover ServiceMonitor resources across every namespace in your Kubernetes cluster, rather than only in the monitoring namespace.
+    serviceMonitorNamespaceSelector:
+      matchNames: []
     resources:
       requests:
         cpu: 500m

@@ -4,5 +4,5 @@ esenvironment: "staging"oRoleArn: "arn:aws:iam::043272859093:role/prod-external-
 mongodb:
   metrics:
     serviceMonitor:
-      additionalLabels:
+      labels:
         release: "prod-platform-prometheus-stack"

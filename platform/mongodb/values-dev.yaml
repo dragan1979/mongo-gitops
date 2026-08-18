@@ -1,2 +1,9 @@
 environment: "dev"
 esoRoleArn: "arn:aws:iam::043272859093:role/dev-external-secrets-irsa"
+
+
+mongodb:
+  metrics:
+    serviceMonitor:
+      additionalLabels:
+        release: "staging-platform-prometheus-stack"

@@ -60,10 +60,29 @@ The comment block in `bootstrap/Chart.yaml` documents the same rule of thumb: **
 - **MongoDB (`platform/mongodb`)** — a wrapper chart around `bitnami/mongodb`:
   - `service-account.yaml` creates `eso-parameter-store-sa`, annotated with the `<env>-external-secrets-irsa` role ARN from Terraform.
   - `secret-store.yaml` defines a namespaced `SecretStore` that authenticates to AWS SSM Parameter Store using that service account.
-  - `external-secret.yaml` pulls `/mongo-app/<env>/mongodb/admin` and `/mongo-app/<env>/mongodb/user` from SSM into a local `mongo-credentials` Kubernetes Secret, refreshed hourly.
+  - `external-secret.yaml` pulls `/mongo-app/<env>/mongodb/admin` and `/mongo-app/<env>/mongodb/user` from SSM into a local `mongo-credentials` Kubernetes Secret, refreshed hourly. It also maps a third key, `mongodb-metrics-password`, to the same `/mongo-app/<env>/mongodb/user` value so the metrics exporter (below) can authenticate.
   - `storageclass.yaml` registers `gp3` (via the EBS CSI driver) as the cluster's default `StorageClass`.
-  - `values.yaml` points MongoDB's `auth.existingSecret` at `mongo-credentials` and defines the `appuser` / `appdb` application identity, with 2Gi of `gp3` persistent storage.
-- **Monitoring (`platform/monitoring`)** — a wrapper chart around `kube-prometheus-stack`, with EKS-managed control-plane scraping disabled (no access to etcd/scheduler/controller-manager on managed nodes), resource requests/limits set for Prometheus, 10Gi of `gp3` storage, and a `grafana-routes.yaml` `HTTPRoute` exposing Grafana on the shared gateway.
+  - `values.yaml` points MongoDB's `auth.existingSecret` at `mongo-credentials` and defines the `appuser` / `appdb` application identity, with 2Gi of `gp3` persistent storage. It also enables the Bitnami chart's built-in **Prometheus metrics exporter** (`metrics.enabled: true`) under a dedicated `mongodb-metrics` user with `clusterMonitor` privileges, and turns on the chart's auto-generated `ServiceMonitor` (`metrics.serviceMonitor.enabled: true`, `interval: 30s`, `scrapeTimeout: 10s`, deployed into `mongodb-system`).
+  - Each `values-<env>.yaml` sets `mongodb.metrics.serviceMonitor.labels.release` to `<env>-platform-prometheus-stack` — the same name kube-prometheus-stack's Argo CD `Application` (and Helm release) uses in that environment — so the `ServiceMonitor` is labeled to match its Prometheus instance.
+- **Monitoring (`platform/monitoring`)** — a wrapper chart around `kube-prometheus-stack`, with EKS-managed control-plane scraping disabled (no access to etcd/scheduler/controller-manager on managed nodes), resource requests/limits set for Prometheus, 10Gi of `gp3` storage, and a `grafana-routes.yaml` `HTTPRoute` exposing Grafana on the shared gateway. `serviceMonitorSelectorNilUsesHelmValues` is set to `false` with empty `serviceMonitorSelector`/`serviceMonitorNamespaceSelector` matchers, so this Prometheus instance discovers and scrapes `ServiceMonitor` objects in **any** namespace regardless of labels — including the `mongodb` chart's `ServiceMonitor` in `mongodb-system`.
+
+### MongoDB metrics flow
+
+```
+[ platform/mongodb values.yaml ]
+   └─ metrics.enabled: true → Bitnami chart adds a mongodb_exporter sidecar
+        └─ authenticates as the "mongodb-metrics" user, password sourced from
+           the mongo-credentials Secret's "mongodb-metrics-password" key
+                (populated by external-secret.yaml, reusing the appuser password)
+   └─ metrics.serviceMonitor.enabled: true → chart renders a ServiceMonitor
+        (scrape interval 30s / timeout 10s, namespace mongodb-system,
+         labeled release: <env>-platform-prometheus-stack)
+                          │
+                          ▼
+[ platform/monitoring — kube-prometheus-stack Prometheus ]
+   discovers the ServiceMonitor cluster-wide (namespace/label selectors are wide open)
+   and scrapes MongoDB metrics on its normal interval → visible in Grafana
+```
 
 ## Environments
 
@@ -85,14 +104,6 @@ Per the (currently commented-out) Jenkins stage in the infra repo, the pipeline 
 3. Commit and push, which Argo CD then picks up automatically (`syncPolicy.automated` is set on every `ApplicationSet`).
 
 Until that stage is re-enabled, the `*-<env>.yaml` files above must be kept in sync with Terraform outputs by hand.
-
-## Known issues to fix
-
-- **`platform/mongodb/values-prod.yaml`** has a malformed line — `esenvironment: "staging"oRoleArn: "..."` — which should be split into `environment: "prod"` and `esoRoleArn: "..."`. As written, Helm will fail to parse this file.
-- **`platform/monitoring/values-prod.yaml`** sets `environment: "dev"` instead of `"prod"`; likely a copy-paste bug that will misroute the prod Grafana `ApplicationSet` name.
-- **`platform/monitoring/values.yaml`** hardcodes `domainName: dev-grafana.aks.com` as the base value with no `values-staging.yaml`/`values-prod.yaml` override for `domainName`, so staging and prod Grafana currently resolve to the dev hostname.
-- Several `ApplicationSet` templates (`platform-aws-elb.yaml`, `platform-cert-manager.yaml`, `platform-external-secrets.yaml`) reference this repo by a different name — `https://github.com/dragan-actions-course/mongo-app-gitops-repo.git` — rather than `mongo-gitops`. Confirm which URL is canonical and update whichever side is stale.
-- IAM role ARNs and the AWS account ID are hardcoded per environment rather than templated/generated — fine for a course/demo project, but worth turning into pipeline-injected values (as the commented-out Jenkins stage intends) before treating this as production-grade.
 
 ## Related repository
 
